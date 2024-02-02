@@ -19,6 +19,10 @@ IMX219双目摄像头与RDK X3 Module连接方式如下图：
 
   ![image-x3module-camera](./image/image-x3module-camera.jpg)
 
+两个摄像头的mipi线分别接到载板的CAM0/CAM1/CAM2的任意两个插槽。
+
+串口线连接到载板的40pin，其中黄色线插到SDA插槽，深蓝色插到SCL插槽。
+
 ## 编译
 
 下载源码后，在RDK系统的终端中运行如下指令编译：
@@ -37,7 +41,7 @@ colcon build
 source /opt/tros/setup.bash
 source install/local_setup.bash
 # launch 方式启动
-ros2 launch stereo_mipi_cam stereo_mipi_cam.launch.py
+ros2 launch hobot_stereo_mipi_cam stereo_mipi_cam.launch.py
 ```
 stereo_mipi_cam.launch.py配置默认输出左右视图拼接后的3840x1080分辨率jpeg图像，发布的话题名称为/image_raw/compressed。
 
@@ -95,7 +99,7 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 source /opt/tros/setup.bash
 source install/local_setup.bash
 # launch 方式启动
-ros2 launch stereo_mipi_cam stereo_mipi_cam.launch.py data_sampling_ms_diff:=30
+ros2 launch hobot_stereo_mipi_cam stereo_mipi_cam.launch.py data_sampling_ms_diff:=30
 ```
 
 启动成功后终端输出如下：

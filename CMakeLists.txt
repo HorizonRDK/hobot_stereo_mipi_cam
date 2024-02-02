@@ -13,7 +13,7 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.5)
-project(stereo_mipi_cam)
+project(hobot_stereo_mipi_cam)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
