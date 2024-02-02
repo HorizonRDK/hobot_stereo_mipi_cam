@@ -62,6 +62,8 @@ MipiStereoCamNode::MipiStereoCamNode(const std::string& node_name)
     rclcpp::shutdown();
     return;
   }
+
+  RCLCPP_WARN_STREAM(rclcpp::get_logger("mipi_stereo_cam_node"), "Init success!");
 }
 
 MipiStereoCamNode::~MipiStereoCamNode() {
@@ -115,9 +117,6 @@ int MipiStereoCamNode::CheckParams() {
 
 int MipiStereoCamNode::Init() {
   if (is_init_) return 0;
-
-  image_pub_ =
-    this->create_publisher<sensor_msgs::msg::Image>("image_raw", 10);
 
   ros_compressed_image_publisher_ =
       this->create_publisher<sensor_msgs::msg::CompressedImage>(
@@ -176,6 +175,21 @@ int MipiStereoCamNode::Init() {
   // 创建图像获取任务
   auto get_img = [this](){
     std::vector<std::shared_ptr<MipiStereoCamImg>> imgs = sp_cam_cap_->GetImg();
+    // 计算获取图像数据的fps
+    static auto last_frame_tp = std::chrono::system_clock::now();
+    static int got_frame_count = 0;
+    got_frame_count++;
+    int interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                      std::chrono::system_clock::now() - last_frame_tp)
+                      .count();
+    if (interval_ms >= 1000) {
+      RCLCPP_INFO(rclcpp::get_logger("mipi_stereo_cam_node"),
+          "Got image fps %.2f",
+      static_cast<float>(got_frame_count) / (static_cast<float>(interval_ms) / 1000.0));
+      last_frame_tp = std::chrono::system_clock::now();
+      got_frame_count = 0;
+    }
+
     std::lock_guard<std::mutex> lg(img_process_task_mtx_);
     if (img_process_task_cache_.size() > cache_len_limit_) {
       img_process_task_cache_.pop();

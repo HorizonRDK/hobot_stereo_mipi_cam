@@ -34,14 +34,14 @@ def generate_launch_description():
             description='camera sampling ms diff'),
 
         Node(
-            package='stereo_mipi_cam',
-            executable='stereo_mipi_cam',
+            package='hobot_stereo_mipi_cam',
+            executable='hobot_stereo_mipi_cam',
             output='screen',
             parameters=[
                 {"image_width": LaunchConfiguration('image_width')},
                 {"image_height": LaunchConfiguration('image_height')},
                 {"data_sampling_ms_diff": LaunchConfiguration('data_sampling_ms_diff')}
             ],
-            arguments=['--ros-args', '--log-level', 'warn']
+            arguments=['--ros-args', '--log-level', 'info']
         )
     ])

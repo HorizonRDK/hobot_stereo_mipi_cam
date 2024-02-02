@@ -1,6 +1,6 @@
 # 功能介绍
 
-对已适配的MIPI接口双目摄像头进行配置，并将采集的图像数据保存到本地，同时以ROS标准图像消息进行发布，供需要使用图像数据的其他模块订阅。
+对已适配的MIPI接口双目摄像头进行配置，将采集的图像数据保存到本地，同时以ROS标准图像消息进行发布，供需要使用图像数据的其他模块订阅。
 
 # 物料清单
 
@@ -43,6 +43,22 @@ source install/local_setup.bash
 # launch 方式启动
 ros2 launch hobot_stereo_mipi_cam stereo_mipi_cam.launch.py
 ```
+
+启动成功后终端输出log如下：
+
+```bash
+[hobot_stereo_mipi_cam-1] 2024/02/02 14:28:03.063 !INFO [x3_cam_init_param][0099]Enable mipi host0 mclk
+[hobot_stereo_mipi_cam-1] 2024/02/02 14:28:03.063 !INFO [x3_cam_init_param][0099]Enable mipi host1 mclk
+[hobot_stereo_mipi_cam-1] [WARN] [1706855283.264779644] [MipiStereoCap]: video_index: 2 sp_open_camera_v2 success
+[hobot_stereo_mipi_cam-1] [WARN] [1706855283.265198332] [mipi_stereo_cam_node]: Init success!
+[hobot_stereo_mipi_cam-1] [INFO] [1706855284.318240924] [mipi_stereo_cam_node]: Got image fps 31.47
+[hobot_stereo_mipi_cam-1] [INFO] [1706855285.338565631] [mipi_stereo_cam_node]: Got image fps 30.39
+[hobot_stereo_mipi_cam-1] [INFO] [1706855286.359621260] [mipi_stereo_cam_node]: Got image fps 30.39
+[hobot_stereo_mipi_cam-1] [INFO] [1706855287.379004307] [mipi_stereo_cam_node]: Got image fps 30.42
+[hobot_stereo_mipi_cam-1] [INFO] [1706855288.399128858] [mipi_stereo_cam_node]: Got image fps 30.42
+[hobot_stereo_mipi_cam-1] [INFO] [1706855289.419326072] [mipi_stereo_cam_node]: Got image fps 30.39
+```
+
 stereo_mipi_cam.launch.py配置默认输出左右视图拼接后的3840x1080分辨率jpeg图像，发布的话题名称为/image_raw/compressed。
 
 ## 图像可视化
@@ -66,7 +82,7 @@ ros2 run rqt_image_view rqt_image_view
 
 ### 使用foxglove可视化
 
-这里采用![foxglove](https://foxglove.dev/studio)方式实现图像可视化，需要在RDK上安装rosbridge-suite。
+这里采用[foxglove](https://foxglove.dev/studio)实现图像可视化，需要在RDK上安装rosbridge-suite。
 
 安装命令：
 
@@ -82,7 +98,7 @@ source /opt/tros/setup.bash
 ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 ```
 
-选择话题/image_raw/compressed，图像效果如下：
+启动foxglove后，打开图像面板，选择话题`/image_raw/compressed`，图像效果如下：
 
 ![foxglove_img_render](image/foxglove_img_render.png)
 
@@ -92,7 +108,7 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 
 图片保存在运行路径下的`cam_[index]`路径，其中index为相机编号。例如两个mipi线分别接在载板的CAM0和CAM2插槽，则保存路径为`cam_0`和`cam_2`。
 
-在RDK系统的终端中运行如下指令，启动数据采集，每30ms采集一组数据：
+在RDK系统的终端中运行如下指令，启动数据采集，使用`data_sampling_ms_diff`参数设置每30ms采集一组数据：
 
 ```bash
 # 配置 tros.b 环境：
@@ -105,16 +121,19 @@ ros2 launch hobot_stereo_mipi_cam stereo_mipi_cam.launch.py data_sampling_ms_dif
 启动成功后终端输出如下：
 
 ```shell
-[stereo_mipi_cam-1] 2024/02/02 12:16:09.009 !INFO [x3_cam_init_param][0099]Enable mipi host0 mclk
-[stereo_mipi_cam-1] 2024/02/02 12:16:09.009 !INFO [x3_cam_init_param][0099]Enable mipi host1 mclk
-[stereo_mipi_cam-1] [WARN] [1706847369.186683712] [MipiStereoCap]: video_index: 2 sp_open_camera_v2 success
-[stereo_mipi_cam-1] [WARN] [1706847369.246633338] [mipi_stereo_cam_node]: Dump data collecting file: ./cam_0/0000000.jpg
-[stereo_mipi_cam-1] [WARN] [1706847369.491463484] [mipi_stereo_cam_node]: Dump data collecting file: ./cam_2/0000000.jpg
-[stereo_mipi_cam-1] [WARN] [1706847370.180848474] [mipi_stereo_cam_node]: Dump data collecting file: ./cam_0/0000001.jpg
-[stereo_mipi_cam-1] [WARN] [1706847370.398939833] [mipi_stereo_cam_node]: Dump data collecting file: ./cam_2/0000001.jpg
-[stereo_mipi_cam-1] [WARN] [1706847371.007720475] [mipi_stereo_cam_node]: Dump data collecting file: ./cam_0/0000002.jpg
-[stereo_mipi_cam-1] [WARN] [1706847371.220861896] [mipi_stereo_cam_node]: Dump data collecting file: ./cam_2/0000002.jpg
-
+[hobot_stereo_mipi_cam-1] 2024/02/02 14:29:13.174 !INFO [x3_cam_init_param][0099]Enable mipi host0 mclk
+[hobot_stereo_mipi_cam-1] 2024/02/02 14:29:13.174 !INFO [x3_cam_init_param][0099]Enable mipi host1 mclk
+[hobot_stereo_mipi_cam-1] [WARN] [1706855353.361908545] [MipiStereoCap]: video_index: 2 sp_open_camera_v2 success
+[hobot_stereo_mipi_cam-1] [WARN] [1706855353.362105243] [mipi_stereo_cam_node]: Data collecting is enabled
+[hobot_stereo_mipi_cam-1] [WARN] [1706855353.362587677] [mipi_stereo_cam_node]: Init success!
+[hobot_stereo_mipi_cam-1] [WARN] [1706855353.902281515] [mipi_stereo_cam_node]: collecting img file: ./cam_0/0000001.jpg
+[hobot_stereo_mipi_cam-1] [WARN] [1706855354.114726633] [mipi_stereo_cam_node]: collecting img file: ./cam_2/0000001.jpg
+[hobot_stereo_mipi_cam-1] [INFO] [1706855354.416454771] [mipi_stereo_cam_node]: Got image fps 31.43
+[hobot_stereo_mipi_cam-1] [WARN] [1706855354.695745587] [mipi_stereo_cam_node]: collecting img file: ./cam_0/0000002.jpg
+[hobot_stereo_mipi_cam-1] [WARN] [1706855354.914084197] [mipi_stereo_cam_node]: collecting img file: ./cam_2/0000002.jpg
+[hobot_stereo_mipi_cam-1] [INFO] [1706855355.435655203] [mipi_stereo_cam_node]: Got image fps 30.45
+[hobot_stereo_mipi_cam-1] [WARN] [1706855355.513600173] [mipi_stereo_cam_node]: collecting img file: ./cam_0/0000003.jpg
+[hobot_stereo_mipi_cam-1] [WARN] [1706855355.725688892] [mipi_stereo_cam_node]: collecting img file: ./cam_2/0000003.jpg
 ```
 
 在启动路径下查看采集到的图片：

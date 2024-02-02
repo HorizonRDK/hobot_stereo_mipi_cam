@@ -21,18 +21,7 @@
 
 int main(int argc, char** argv) {
   rclcpp::init(argc, argv);
-
   rclcpp::spin(std::make_shared<mipi_stereo_cam::MipiStereoCamNode>("hobot_stereo_mipi_cam"));
-  
-  // auto sp_node = std::make_shared<mipi_stereo_cam::MipiStereoCamNode>("hobot_stereo_mipi_cam");
-  // rclcpp::executors::MultiThreadedExecutor exec;
-  // // rclcpp::executors::MultiThreadedExecutor exec(
-  // //     rclcpp::ExecutorOptions(), 8
-  // //   );
-  // printf("\n\n get_number_of_threads: %d \n\n", exec.get_number_of_threads());
-  // exec.add_node(sp_node);
-  // exec.spin();
-
   rclcpp::shutdown();
   return 0;
 }

@@ -44,14 +44,10 @@ private:
   
   void OnRecvedImg(std::vector<std::shared_ptr<MipiStereoCamImg>> imgs);
 
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_ = nullptr;
-
   std::shared_ptr<MipiStereoCap> sp_cam_cap_ = nullptr;
   std::shared_ptr<std::thread> sp_getimg_task_ = nullptr;
-
   std::shared_ptr<std::thread> sp_work_ = nullptr;
   std::shared_ptr<std::thread> sp_teleop_task_ = nullptr;
-
   rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr ros_compressed_image_publisher_ = nullptr;
 
   // parameters
