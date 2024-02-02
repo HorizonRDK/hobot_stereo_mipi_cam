@@ -30,7 +30,7 @@
 namespace mipi_stereo_cam {
 
 MipiStereoCamNode::MipiStereoCamNode(const std::string& node_name)
-    : is_init_(false), enable_dump_(false), Node(node_name, rclcpp::NodeOptions()) {
+    : is_init_(false), Node(node_name, rclcpp::NodeOptions()) {
   // Check if camera is already open
   std::string cfg_info;
   std::ifstream sif_info("/sys/devices/platform/soc/a4001000.sif/cfg_info");
@@ -80,14 +80,14 @@ int MipiStereoCamNode::GetParams() {
   this->declare_parameter("image_width", image_width_);
   this->declare_parameter("io_method", io_method_);
   this->declare_parameter("out_format", out_format_);
-  this->declare_parameter("data_sampling_rate", data_sampling_rate_);
+  this->declare_parameter("data_sampling_ms_diff", data_sampling_ms_diff_);
   
   this->get_parameter<std::string>("camera_name", camera_name_);
   this->get_parameter<int>("image_height", image_height_);
   this->get_parameter<int>("image_width", image_width_);
   this->get_parameter<std::string>("io_method", io_method_);
   this->get_parameter<std::string>("out_format", out_format_);
-  this->get_parameter<int>("data_sampling_rate", data_sampling_rate_);
+  this->get_parameter<int>("data_sampling_ms_diff", data_sampling_ms_diff_);
 
   RCLCPP_WARN_STREAM(
       rclcpp::get_logger("mipi_stereo_cam_node"),
@@ -97,7 +97,7 @@ int MipiStereoCamNode::GetParams() {
       << "\n image_height: " << image_height_
       << "\n io_method_name: " << io_method_
       << "\n out_format: " << out_format_
-      << "\n data_sampling_rate: " << data_sampling_rate_
+      << "\n data_sampling_ms_diff: " << data_sampling_ms_diff_
     );
 
   return 0;
@@ -132,8 +132,9 @@ int MipiStereoCamNode::Init() {
     return -1;
   }
 
-  if (data_sampling_rate_ >= 0) {
-    // Data collecting is enabled
+  if (data_sampling_ms_diff_ >= 0) {
+    RCLCPP_WARN_STREAM(rclcpp::get_logger("mipi_stereo_cam_node"),
+                      "Data collecting is enabled");
     for (const auto& video_index : video_index_) {
       std::string path = "./cam_" + std::to_string(video_index);
       if (access(path.data(), W_OK) != 0) {
@@ -147,40 +148,6 @@ int MipiStereoCamNode::Init() {
         rclcpp::shutdown();
         return -1;
       }
-    }
-
-    if (0 == data_sampling_rate_) {
-      // 使能了手动采集功能
-      // 获取键盘输入任务
-      sp_teleop_task_ = std::make_shared<std::thread>([this](){
-        while (rclcpp::ok()) {
-          RCLCPP_WARN_STREAM(rclcpp::get_logger("mipi_stereo_cam_node"), "waiting for key...\n"
-            << "g/G: dump one group imgs \n"
-            << "q/Q: stop and exit\n");
-            
-          char key = Getch();
-          // printf("command: %c\n\n", key);
-          RCLCPP_WARN_STREAM(rclcpp::get_logger("mipi_stereo_cam_node"), "capture key: " << key);
-
-          //'A' and 'B' represent the Up and Down arrow keys consecutively 
-          if (key=='q'||key=='Q') {
-            RCLCPP_WARN_STREAM(rclcpp::get_logger("mipi_stereo_cam_node"), "exit...");
-            enable_dump_ = false;
-            rclcpp::shutdown();
-            return;
-          } else if (key=='g'||key=='G') {
-            RCLCPP_WARN_STREAM(rclcpp::get_logger("mipi_stereo_cam_node"), "enable dump...");
-            enable_dump_ = true; 
-          } else {
-            RCLCPP_ERROR_STREAM(rclcpp::get_logger("mipi_stereo_cam_node"), "capture invalid key: " << key
-              << ", valid keys: \n"
-              << "g/G: dump one group imgs \n"
-              << "q/Q: stop and exit\n");
-            rclcpp::shutdown();
-            return;
-          }
-        }
-      });
     }
   }
 
@@ -214,8 +181,7 @@ int MipiStereoCamNode::Init() {
       img_process_task_cache_.pop();
     }
     
-    img_process_task_cache_.push(std::bind(&MipiStereoCamNode::OnRecvedImg, this,
-      std::pair<int, std::vector<std::shared_ptr<MipiStereoCamImg>>>(dump_count_++, imgs)));
+    img_process_task_cache_.push(std::bind(&MipiStereoCamNode::OnRecvedImg, this, imgs));
     img_process_task_cv_.notify_one();
   };
 
@@ -229,28 +195,29 @@ int MipiStereoCamNode::Init() {
   return 0;
 }
 
-void MipiStereoCamNode::OnRecvedImg(std::pair<uint64_t, std::vector<std::shared_ptr<MipiStereoCamImg>>> img_pair) {
+void MipiStereoCamNode::OnRecvedImg(std::vector<std::shared_ptr<MipiStereoCamImg>> img_pair) {
   cv::Mat bgr_stitch;
   int idx = 0;
   rclcpp::Time ts;
+  static auto last_collect_tp = std::chrono::system_clock::now();
   auto tp_start = std::chrono::system_clock::now();
-
-  // 检查是否需要dump
-  bool dump = false;
-  if (data_sampling_rate_ > 0) {
-    // 自动采集模式
-    get_img_counts_++;
-    if (get_img_counts_ >= data_sampling_rate_) {
-      get_img_counts_ = 0;
-      dump = true;
-    }
-  } else if (data_sampling_rate_ == 0 && enable_dump_) {
-    // 手动采集模式
-    enable_dump_ = false;
-    dump = true;
+  bool do_data_collect = false;
+  static uint64_t seq = 0;
+  std::string str_idx = std::to_string(seq++);
+  if (str_idx.length() < 7) {
+    str_idx = std::string(7 - str_idx.length(), '0') + str_idx;
   }
 
-  for (const auto& sp_img : img_pair.second) {
+  // 检查是否需要dump
+  if (data_sampling_ms_diff_ > 0 &&
+    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now() - last_collect_tp)
+                        .count() >= data_sampling_ms_diff_) {
+    do_data_collect = true;
+    last_collect_tp = std::chrono::system_clock::now();
+  }
+
+  for (const auto& sp_img : img_pair) {
     if (!sp_img) {
       continue;
     }
@@ -261,7 +228,7 @@ void MipiStereoCamNode::OnRecvedImg(std::pair<uint64_t, std::vector<std::shared_
     cv::cvtColor(nv12, bgr, CV_YUV2BGR_NV12);
 
     if (bgr_stitch.cols == 0 || bgr_stitch.rows == 0) {
-      bgr_stitch.create(bgr.rows, bgr.cols * img_pair.second.size(), bgr.type());
+      bgr_stitch.create(bgr.rows, bgr.cols * img_pair.size(), bgr.type());
     }
     bgr.copyTo(bgr_stitch(cv::Rect(bgr.cols * idx,
                                   0,
@@ -269,16 +236,12 @@ void MipiStereoCamNode::OnRecvedImg(std::pair<uint64_t, std::vector<std::shared_
                                   bgr.rows)));
     idx++;
     
-    if (dump) {
-      std::string str_idx = std::to_string(img_pair.first);
-      if (str_idx.length() < 7) {
-        str_idx = std::string(7 - str_idx.length(), '0') + str_idx;
-      }
+    if (do_data_collect) {
       std::string file_name =
         "./cam_" + std::to_string(sp_img->video_index_) + "/" +
         str_idx + ".jpg";
       RCLCPP_WARN_STREAM(rclcpp::get_logger("mipi_stereo_cam_node"),
-        "Dump data collecting file: " << file_name);
+        "collecting img file: " << file_name);
       cv::imwrite(file_name, bgr);
     }
   }
@@ -318,33 +281,6 @@ void MipiStereoCamNode::OnRecvedImg(std::pair<uint64_t, std::vector<std::shared_
 
   if (ros_compressed_image_publisher_)
     ros_compressed_image_publisher_->publish(*compressed_img_pub_);
-}
-
-int MipiStereoCamNode::Getch() {
-  int ch;
-  struct termios oldt;
-  struct termios newt;
-
-  // Store old settings, and copy to new settings
-  tcgetattr(STDIN_FILENO, &oldt);
-  newt = oldt;
-
-  // Make required changes and apply the settings
-  newt.c_lflag &= ~(ICANON | ECHO);
-  newt.c_iflag |= IGNBRK;
-  newt.c_iflag &= ~(INLCR | ICRNL | IXON | IXOFF);
-  newt.c_lflag &= ~(ICANON | ECHO | ECHOK | ECHOE | ECHONL | ISIG | IEXTEN);
-  newt.c_cc[VMIN] = 1;
-  newt.c_cc[VTIME] = 0;
-  tcsetattr(fileno(stdin), TCSANOW, &newt);
-
-  // Get the current character
-  ch = getchar();
-
-  // Reapply old settings
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-
-  return ch;
 }
 
 }  // namespace mipi_stereo_cam

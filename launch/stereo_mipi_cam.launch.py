@@ -21,10 +21,6 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
-            'io_method',
-            default_value='ros',
-            description='ros/shared_mem'),
-        DeclareLaunchArgument(
             'image_width',
             default_value='1920',
             description='camera out image width'),
@@ -33,19 +29,18 @@ def generate_launch_description():
             default_value='1080',
             description='camera out image height'),
         DeclareLaunchArgument(
-            'data_sampling_rate',
+            'data_sampling_ms_diff',
             default_value='-1',
-            description='camera sampling rate'),
+            description='camera sampling ms diff'),
 
         Node(
             package='stereo_mipi_cam',
             executable='stereo_mipi_cam',
             output='screen',
             parameters=[
-                {"io_method": LaunchConfiguration('io_method')},
                 {"image_width": LaunchConfiguration('image_width')},
                 {"image_height": LaunchConfiguration('image_height')},
-                {"data_sampling_rate": LaunchConfiguration('data_sampling_rate')}
+                {"data_sampling_ms_diff": LaunchConfiguration('data_sampling_ms_diff')}
             ],
             arguments=['--ros-args', '--log-level', 'warn']
         )

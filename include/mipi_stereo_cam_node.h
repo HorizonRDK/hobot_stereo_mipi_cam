@@ -42,11 +42,7 @@ private:
 
   int Init();
   
-  // <index, image>
-  void OnRecvedImg(std::pair<uint64_t, std::vector<std::shared_ptr<MipiStereoCamImg>>> imgs);
-
-  // For non-blocking keyboard inputs
-  int Getch();
+  void OnRecvedImg(std::vector<std::shared_ptr<MipiStereoCamImg>> imgs);
 
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_ = nullptr;
 
@@ -71,21 +67,18 @@ private:
   std::string camera_info_url_;
   std::string camera_calibration_file_path_;
 
-  size_t cache_len_limit_ = 10;
+  // mipi的设备号，根据实际连接的插槽进行设置
+  // 默认连接的是CAM0和CAM2
   std::vector<int> video_index_ {0, 2};
-  std::map<int, uint64_t> counts_;
-  uint64_t get_img_counts_ = 0;
-
-  std::map<int, std::queue<std::shared_ptr<MipiStereoCamImg>>> img_cache_;
-  std::mutex img_mtx_;
 
   std::queue<std::function<void()>> img_process_task_cache_;
+  size_t cache_len_limit_ = 10;
   std::mutex img_process_task_mtx_;
   std::condition_variable img_process_task_cv_;
 
-  int data_sampling_rate_ = -1;
-  uint64_t dump_count_ = 0;
-  std::atomic_bool enable_dump_;
+  // 数据采集的时间间隔，单位ms，>0激活数据采集
+  int data_sampling_ms_diff_ = -1;
 };
+
 }  // namespace mipi_stereo_cam
 #endif  // MIPI_STEREO_CAM_NODE_H_
