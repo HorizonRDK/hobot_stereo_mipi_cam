@@ -26,15 +26,15 @@ def generate_launch_description():
             description='ros/shared_mem'),
         DeclareLaunchArgument(
             'image_width',
-            default_value='1280',
+            default_value='1920',
             description='camera out image width'),
         DeclareLaunchArgument(
             'image_height',
-            default_value='720',
+            default_value='1080',
             description='camera out image height'),
         DeclareLaunchArgument(
             'data_sampling_rate',
-            default_value='30',
+            default_value='-1',
             description='camera sampling rate'),
 
         Node(

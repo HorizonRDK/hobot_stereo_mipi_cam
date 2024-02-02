@@ -35,19 +35,13 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 
-# 默认使用零拷贝
-#add_definitions(-DUSING_HBMEM)
-#find_package(hbm_img_msgs REQUIRED)
-
 include_directories(
   include
-  deps/include
 )
 
 link_directories(
   ${CMAKE_SYSROOT}/usr/lib/hbmedia/
   ${CMAKE_SYSROOT}/usr/lib/hbbpu/
-  deps/lib
 )
 
 ## Build the mipi camera library
@@ -87,11 +81,6 @@ endif()
 install(
   TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
-
-install(DIRECTORY
-  ${PROJECT_SOURCE_DIR}/config/
-  DESTINATION lib/${PROJECT_NAME}/config/
 )
 
 install(DIRECTORY
