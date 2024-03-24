@@ -1,53 +1,56 @@
-# 功能介绍
+English| [简体中文](./README_cn.md)
 
-对已适配的MIPI接口双目摄像头进行配置，将采集的图像数据保存到本地，同时以ROS标准图像消息进行发布，供需要使用图像数据的其他模块订阅。
+# Feature Introduction
 
-# 物料清单
+Configure the dual MIPI interface binocular camera that has been adapted, save the collected image data locally, and publish it in ROS standard image messages for other modules that need to use image data to subscribe.
 
-当前已支持以下MIPI摄像头
+# Bill of Materials
 
-| 序号 | 名称   | 示意图片                    | 参数     | 参考链接                                                     |
+Currently supported MIPI cameras are as follows
+
+| Number | Name   | Sample Image                 | Parameters | Reference Link                                                |
 | ---- | ------ | --------------------------- | -------- | ------------------------------------------------------------ |
-| 1    | IMX219 | ![IMX219-83-Stereo-Camera](./image/IMX219-83-Stereo-Camera.jpg) | 800W像素 | [IMX219](https://www.waveshare.net/shop/IMX219-83-Stereo-Camera.htm) |
+| 1    | IMX219 | ![IMX219-83-Stereo-Camera](./image/IMX219-83-Stereo-Camera.jpg) | 800W Pixels | [IMX219](https://www.waveshare.net/shop/IMX219-83-Stereo-Camera.htm) |
 
 
-# 使用方法
+# Usage
 
-## 硬件连接
+## Hardware Connection
 
-IMX219双目摄像头与RDK X3 Module连接方式如下图：
+The connection method of IMX219 binocular camera with RDK X3 Module is as shown in the figure below:
 
   ![image-x3module-camera](./image/image-x3module-camera.jpg)
 
-两个摄像头的mipi线分别接到载板的CAM0/CAM1/CAM2的任意两个插槽。
+The mipi lines of the two cameras are connected to any two slots of CAM0/CAM1/CAM2 on the carrier board.
 
-串口线连接到载板的40pin，其中黄色线插到SDA插槽，深蓝色插到SCL插槽。
+The serial line is connected to the 40-pin slot on the carrier board, with the yellow line plugged into the SDA slot and the deep blue line plugged into the SCL slot.
 
-## 编译
+## Compilation
 
-下载源码后，在RDK系统的终端中运行如下指令编译：
+After downloading the source code, run the following command in the terminal of the RDK system to compile:
 
 ```shell
 source /opt/tros/setup.bash
 colcon build
 ```
 
-## 启动相机
+## Start the Camera
 
-在RDK系统的终端中运行如下指令，可使用默认相机配置：
+Run the following command in the terminal of the RDK system to use the default camera configuration:
 
 ```bash
-# 配置 tros.b 环境：
+# Configure the tros.b environment:
 source /opt/tros/setup.bash
 source install/local_setup.bash
-# launch 方式启动
+# Start in launch mode
 ros2 launch hobot_stereo_mipi_cam stereo_mipi_cam.launch.py
 ```
 
-启动成功后终端输出log如下：
+After successful startup, the terminal will output logs like below:
 
 ```bash
 [hobot_stereo_mipi_cam-1] 2024/02/02 14:28:03.063 !INFO [x3_cam_init_param][0099]Enable mipi host0 mclk
+``````
 [hobot_stereo_mipi_cam-1] 2024/02/02 14:28:03.063 !INFO [x3_cam_init_param][0099]Enable mipi host1 mclk
 [hobot_stereo_mipi_cam-1] [WARN] [1706855283.264779644] [MipiStereoCap]: video_index: 2 sp_open_camera_v2 success
 [hobot_stereo_mipi_cam-1] [WARN] [1706855283.265198332] [mipi_stereo_cam_node]: Init success!
@@ -59,66 +62,64 @@ ros2 launch hobot_stereo_mipi_cam stereo_mipi_cam.launch.py
 [hobot_stereo_mipi_cam-1] [INFO] [1706855289.419326072] [mipi_stereo_cam_node]: Got image fps 30.39
 ```
 
-stereo_mipi_cam.launch.py配置默认输出左右视图拼接后的3840x1080分辨率jpeg图像，发布的话题名称为/image_raw/compressed。
+stereo_mipi_cam.launch.py configures the default output of left and right view stitched 3840x1080 resolution jpeg image, published topic name is /image_raw/compressed.
 
-## 图像可视化
+## Image Visualization
 
-### 使用ROS rqt_image_view
+### Using ROS rqt_image_view
 
-这里采用rqt_image_view方式实现图像可视化，需要在PC端安装ROS2 Foxy或者Humble版本。
+Here we use the rqt_image_view to visualize the image, make sure to have ROS2 Foxy or Humble version installed on the PC.
 
-保证PC与RDK X3处于同一网段，以Foxy版本为例在PC上执行
+Ensure that the PC and RDK X3 are on the same network segment. For Foxy version, execute the following on the PC:
 
 ```shell
-# 配置ROS2环境
+# Set up ROS2 environment
 source /opt/ros/foxy/local_setup.bash
 ros2 run rqt_image_view rqt_image_view
 ```
 
-选择话题/image_raw/compressed,图像效果如下：
+Select topic /image_raw/compressed, the image effect is as shown below:
 
 ![](./image/rqt-result.png)
 
 
-### 使用foxglove可视化
+### Using foxglove for Visualization
 
-这里采用[foxglove](https://foxglove.dev/studio)实现图像可视化，需要在RDK上安装rosbridge-suite。
+Here we use [foxglove](https://foxglove.dev/studio) for image visualization, rosbridge-suite needs to be installed on RDK.
 
-安装命令：
+Installation command:
 
 ```bash
 apt install ros-foxy-rosbridge-suite
 ```
 
-启动命令：
+Launch command:
 
 ```bash
-# 配置 tros.b 环境：
+# Set up for tros.b environment:
 source /opt/tros/setup.bash
 ros2 launch rosbridge_server rosbridge_websocket_launch.xml
-```
-
-启动foxglove后，打开图像面板，选择话题`/image_raw/compressed`，图像效果如下：
+```After starting foxglove, open the image panel and select the topic `/image_raw/compressed`, the image effect is as follows:
 
 ![foxglove_img_render](image/foxglove_img_render.png)
 
-## 数据采集
+## Data Collection
 
-支持自动采集图像数据，并将采集的图像数据保存到本地。
+Supports automatic collection of image data and saves the collected image data locally.
 
-图片保存在运行路径下的`cam_[index]`路径，其中index为相机编号。例如两个mipi线分别接在载板的CAM0和CAM2插槽，则保存路径为`cam_0`和`cam_2`。
+Images are saved in the path `cam_[index]` under the running path, where index is the camera number. For example, if two mipi lines are connected to the CAM0 and CAM2 slots on the carrier board, the save paths will be `cam_0` and `cam_2` respectively.
 
-在RDK系统的终端中运行如下指令，启动数据采集，使用`data_sampling_ms_diff`参数设置每30ms采集一组数据：
+Run the following command in the terminal of the RDK system to start data collection, using the `data_sampling_ms_diff` parameter to set the interval for collecting a set of data every 30ms:
 
 ```bash
-# 配置 tros.b 环境：
+# Configure the tros.b environment:
 source /opt/tros/setup.bash
 source install/local_setup.bash
-# launch 方式启动
+# Start via launch method
 ros2 launch hobot_stereo_mipi_cam stereo_mipi_cam.launch.py data_sampling_ms_diff:=30
 ```
 
-启动成功后终端输出如下：
+Upon successful start, the terminal will output as follows:
 
 ```shell
 [hobot_stereo_mipi_cam-1] 2024/02/02 14:29:13.174 !INFO [x3_cam_init_param][0099]Enable mipi host0 mclk
@@ -136,7 +137,7 @@ ros2 launch hobot_stereo_mipi_cam stereo_mipi_cam.launch.py data_sampling_ms_dif
 [hobot_stereo_mipi_cam-1] [WARN] [1706855355.725688892] [mipi_stereo_cam_node]: collecting img file: ./cam_2/0000003.jpg
 ```
 
-在启动路径下查看采集到的图片：
+View the collected images under the startup path:
 
 ```bash
 # ls cam_*
@@ -147,33 +148,30 @@ cam_2:
 0000001.jpg  0000002.jpg  0000003.jpg  0000004.jpg  0000005.jpg
 ```
 
-# 接口说明
+# Interface Description## Topics
 
-## 话题
+### Publish Topics
 
-### 发布话题
+| Name              | Message Type                          | Description                               |
+| ----------------- | ------------------------------------- | ----------------------------------------- |
+| /image_raw/compressed | sensor_msgs::msg::CompressedImage   | Periodically publishes image topics in JPEG format |
 
-| 名称         | 消息类型                             | 说明                                     |
-| ------------ | ------------------------------------ | ---------------------------------------- |
-| /image_raw/compressed   | sensor_msgs::msg::CompressedImage          | 周期发布的图像话题，jpeg格式             |
+## Parameters
 
-## 参数
+| Name                    | Parameter Value         | Description                                       |
+| ----------------------- | ----------------------- | ------------------------------------------------- |
+| image_width             | 1920 (default)         | Related to the camera used                         |
+| image_height            | 1080 (default)         | Related to the camera used                         |
+| data_sampling_ms_diff   | -1 (default)           | Time interval for collecting image data, in ms. <=0 means not collecting data, >0 means collecting a group of image data every data_sampling_ms_diff ms |
 
-| 名称                         | 参数值                                          | 说明                                               |
-| ---------------------------- | ----------------------------------------------- | -------------------------------------------------- |
-| image_width                  | 1920（默认）                                    | 和使用的相机有关                                   |
-| image_height                 | 1080（默认）                                    | 和使用的相机有关                                   |
-| data_sampling_ms_diff         | -1（默认）                      | 采集图像数据的时间间隔，单位ms，<=0表示不采集数据，>0表示每data_sampling_ms_diff ms时间采集一组图像数据 |
+# FAQs
 
+1. How to set the video_device parameter for the camera?
 
-# 常见问题
+   The video_device parameter corresponds to different slots on the carrier board where the camera is connected. Set the video_device parameter in `include/mipi_stereo_cam_node.h` file under the `std::vector<int> video_index_ {0, 2}` configuration. By default, it is connected to slots CAM0 and CAM2.
 
-1. 如何设置相机的video_device参数
+2. How to use the stereo data published by the camera?
 
-  相机连接到的载板插槽不同，对应的video_device参数不同，在`include/mipi_stereo_cam_node.h`文件的`std::vector<int> video_index_ {0, 2}`配置中进行设置，默认连接的是CAM0和CAM2两个插槽。
+   The data captured by the camera is left and right views of nv12 format images with timestamp alignment. In the `void OnRecvedImg(std::vector<std::shared_ptr<MipiStereoCamImg>> imgs)` interface, first encode the two image data into JPEG format. If data sampling is enabled, save these two image data locally, then concatenate and publish the two JPEG images horizontally.
 
-2. 如何使用相机发布的双目数据
-
-  从相机采集到的是经过时间戳对齐后的左右视图的nv12格式图片，在`void OnRecvedImg(std::vector<std::shared_ptr<MipiStereoCamImg>> imgs)`接口中先将两张图片数据编码成jpeg格式，如果启用了数据采集，将这两张图片数据保存到本地，再将两张jpeg图片横向拼接起来后发布。
-
-  需要注意，左右视图的jpeg图片的拼接和发布处理过程比较耗时，如果使用图片数据做算法感知，建议拿到nv12格式图片后只做算法推理，不进行jpeg格式图片的拼接和发布。
+   Please note that the process of concatenating and publishing the left and right view JPEG images is time-consuming. If using image data for algorithm perception, it is recommended to only perform algorithm inference on the nv12 format image data, without concatenating and publishing JPEG format images.
