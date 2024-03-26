@@ -50,7 +50,6 @@ After successful startup, the terminal will output logs like below:
 
 ```bash
 [hobot_stereo_mipi_cam-1] 2024/02/02 14:28:03.063 !INFO [x3_cam_init_param][0099]Enable mipi host0 mclk
-``````
 [hobot_stereo_mipi_cam-1] 2024/02/02 14:28:03.063 !INFO [x3_cam_init_param][0099]Enable mipi host1 mclk
 [hobot_stereo_mipi_cam-1] [WARN] [1706855283.264779644] [MipiStereoCap]: video_index: 2 sp_open_camera_v2 success
 [hobot_stereo_mipi_cam-1] [WARN] [1706855283.265198332] [mipi_stereo_cam_node]: Init success!
@@ -99,7 +98,8 @@ Launch command:
 # Set up for tros.b environment:
 source /opt/tros/setup.bash
 ros2 launch rosbridge_server rosbridge_websocket_launch.xml
-```After starting foxglove, open the image panel and select the topic `/image_raw/compressed`, the image effect is as follows:
+```
+After starting foxglove, open the image panel and select the topic `/image_raw/compressed`, the image effect is as follows:
 
 ![foxglove_img_render](image/foxglove_img_render.png)
 
